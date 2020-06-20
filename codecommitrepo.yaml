@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "template to create a code commit repository"
+Resources:
+  CodeCommitRepository:
+    Type: "AWS::CodeCommit::Repository"
+    Properties:
+       RepositoryDescription: "my test repository"
+       RepositoryName: !Sub "${AWS::Region}-aws-test-repository"
+
+Outputs:
+  CodeCommitRepository:
+    Description: The code commit repository name
+    Value: !Ref CodeCommitRepository
+    Export: 
+      Name: !Sub "${AWS::StackName}-CodeCommitRepository"
