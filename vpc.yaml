@@ -6,14 +6,24 @@ Parameters:
   VPCBlock:
     Type: String
     Description: The CIDR Block for the VPC
+    AllowedValues:
+      - 10.255.72.0/16
+      - 10.250.72.0/16
 
   PublicSubnetBlock:
     Type: String
     Description: The CIDR Block for the public subnet
+    AllowedValues:
+      - 10.255.72.0/24
+      - 10.250.72.0/24
 
   AvailabilityZone:
     Type: String
     Description: The Availability zone to place the public subnet
+    AllowedValues:
+      - eu-central-1a
+      - eu-central-1b 
+      - eu-central-1c
 
 Resources:
   VPC:
