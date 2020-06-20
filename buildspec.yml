@@ -12,6 +12,7 @@ phases:
     #- cfn_nag_rules # Show all cfn_nag_rules that will be used in the scan
   build:
     commands:
+    - cd ./
     - cfn-lint vpc.yaml
     - cfn_nag_scan -i vpc.yaml
     #- scriptToExecute=`find $(pwd)/ \( -name "CfnTemplateValidation.sh" \) `
