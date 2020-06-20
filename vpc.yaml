@@ -46,7 +46,7 @@ Resources:
     Properties:
       DeliverLogsPermissionArn: !GetAtt FlowLogRole.Arn
       LogGroupName: FlowLogsGroup
-      ResourceId: !Ref MyVPC
+      ResourceId: !Ref VPC
       ResourceType: VPC
       TrafficType: ALL
 
