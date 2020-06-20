@@ -41,15 +41,6 @@ Resources:
         - Key: Team
           Value: DevOps
 
-  VPCFlowLog:
-    Type: AWS::EC2::FlowLog
-    Properties:
-      DeliverLogsPermissionArn: !GetAtt FlowLogRole.Arn
-      LogGroupName: FlowLogsGroup
-      ResourceId: !Ref VPC
-      ResourceType: VPC
-      TrafficType: ALL
-
   IGW: 
     Type: AWS::EC2::InternetGateway
     Properties: 
