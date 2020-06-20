@@ -11,6 +11,10 @@ Parameters:
     Type: String
     Description: The CIDR Block for the public subnet
 
+  AvailabilityZone:
+    Type: String
+    Description: The Availability zone to place the public subnet
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -62,7 +66,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       MapPublicIpOnLaunch: true
-      AvailabilityZone: eu-west-2a
+      AvailabilityZone: !Ref AvailabilityZone
       CidrBlock: !Ref PublicSubnetBlock
       VpcId: !Ref VPC
       Tags:
