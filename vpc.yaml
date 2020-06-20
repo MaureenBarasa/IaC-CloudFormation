@@ -1,0 +1,100 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to Create our Network Architecture
+
+Parameters:
+  VPCBlock:
+    Type: String
+    Description: The CIDR Block for the VPC
+
+  PublicSubnetBlock:
+    Type: String
+    Description: The CIDR Block for the public subnet
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: !Ref VPCBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-DevOps-VPC
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Team
+          Value: DevOps
+
+  IGW: 
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-DevOps-IGW
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Team
+          Value: DevOps
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: eu-central-1-DevOps-Public-RTB
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Team
+          Value: DevOps
+
+  PublicRoute:
+    DependsOn: VPCGatewayAttachment
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: eu-west-2a
+      CidrBlock: !Ref PublicSubnetBlock
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: eu-central-1-DevOps-PublicSubnet
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Team
+          Value: DevOps
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref IGW
+      VpcId: !Ref VPC
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+Outputs:
+
+  SubnetId:
+    Description: Subnets IDs in the VPC
+    Value: !Ref PublicSubnet
+    Export: 
+      Name: !Sub "${AWS::StackName}-PublicSubnet"
+
+  VpcId:
+    Description: The VPC Id
+    Value: !Ref VPC
+    Export: 
+      Name: !Sub "${AWS::StackName}-VPCID"
