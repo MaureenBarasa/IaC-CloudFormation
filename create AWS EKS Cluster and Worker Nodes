@@ -1,0 +1,236 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon Create test demo EKS Cluster and Worker Nodes Template'
+
+Parameters:
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: "your-key-pair-name"
+
+  NodeImageId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI id for the node instances.
+    Default: "your-chosen-ami-ID"
+
+  NodeInstanceType:
+    Description: EC2 instance type for the node instances
+    Type: String
+    Default: "Your-ec2-instance-type"
+
+  NodeAutoScalingGroupMinSize:
+    Type: Number
+    Description: Minimum size of Node Group ASG.
+    Default: 2
+
+  NodeAutoScalingGroupMaxSize:
+    Type: Number
+    Description: Maximum size of Node Group ASG.
+    Default: 2
+
+  NodeAutoScalingGroupDesiredSize:
+    Type: Number
+    Description: Desired size of Node Group ASG
+    Default: 2
+  
+  ClusterName:
+    Description: The cluster name provided when the cluster was created.  If it is incorrect, nodes will not be able to join the cluster.
+    Type: String
+    Default: "Your-cluster-name"
+
+  NodeGroupName:
+    Description: Unique identifier for the Node Group.
+    Type: String
+    Default: "Your-node-group-name"
+
+  VpcId:
+    Description: The VPC of the worker instances
+    Type: string
+    Default: "your-vpc-ID"
+    
+  EKSPublicAccessEndpoint:
+    Type: String
+    Default: disable
+    Description: Configure access to the Kubernetes API server endpoint from outside of your VPC.
+    
+  EKSPrivateAccessEndpoint:
+    Type: String
+    Default: Enabled
+    
+  Subnet01Id:
+    Description: The subnet to create your cluster and worker instances
+    Type: string
+    Default: "your-subnet-ID"
+    
+  Subnet02Id:
+    Description: The subnet to create your cluster and worker instances
+    Type: string
+    Default: "your-subnet-ID"
+
+Resources:
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VpcId
+      Tags: 
+        - Key: Name
+          Value: eu-west-1-TEST-DEMO-EKS-ServiceRole
+        - Key: Owner
+          Value: Maureen Barasa
+        - Key: environment
+          Value: test
+        - Key: Customer
+          Value: DevSecOps
+        - Key: Project
+          Value: test-demo
+
+  EKSServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      RoleName: eu-west-1-TEST-DEMO-EKS-ServiceRole
+      AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"eks.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+      Tags: 
+        - Key: Name
+          Value: eu-west-1-TEST-DEMO-EKS-ServiceRole
+        - Key: Owner
+          Value: Maureen Barasa
+        - Key: environment
+          Value: test
+        - Key: Customer
+          Value: DevSecOps
+        - Key: Project
+          Value: test-demo
+
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties: 
+      Name: !Sub "${AWS::Region}-AWS-DXL-EKS-Cluster"
+      ResourcesVpcConfig: 
+         SecurityGroupIds:
+           - !Ref ControlPlaneSecurityGroup
+         SubnetIds: 
+           - !Ref Subnet01Id
+           - !Ref Subnet02Id
+      RoleArn: !GetAtt EKSServiceRole.Arn
+      Version: 1.17
+
+  NodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  NodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for all nodes in the cluster
+      VpcId:
+        !Ref VpcId
+      Tags:
+      - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+        Value: 'owned'
+
+  NodeSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: NodeSecurityGroup
+    Properties:
+      Description: Allow node to communicate with each other
+      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: '-1'
+      FromPort: 0
+      ToPort: 65535
+
+  NodeSecurityGroupFromControlPlaneIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: NodeSecurityGroup
+    Properties:
+      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
+      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref ControlPlaneSecurityGroup
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+
+  ControlPlaneEgressToNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroupEgress
+    DependsOn: NodeSecurityGroup
+    Properties:
+      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
+      GroupId: !Ref ControlPlaneSecurityGroup
+      DestinationSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+
+  ControlPlaneSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: NodeSecurityGroup
+    Properties:
+      Description: Allow pods to communicate with the cluster API Server
+      GroupId: !Ref ControlPlaneSecurityGroup
+      SourceSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: tcp
+      ToPort: 443
+      FromPort: 443
+
+  EKSNodeGroup:
+    DependsOn: EKSCluster
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      AmiType: AL2_x86_64 
+      ClusterName: !Ref EKSCluster
+      DiskSize: 20
+      InstanceTypes: 
+         - !Ref NodeInstanceType
+      NodegroupName: !Ref NodeGroupName
+      NodeRole: !GetAtt NodeInstanceRole.Arn
+      RemoteAccess: 
+        Ec2SshKey: !Ref KeyName
+      ScalingConfig: 
+        DesiredSize: !Ref NodeAutoScalingGroupDesiredSize 
+        MaxSize: !Ref NodeAutoScalingGroupMaxSize
+        MinSize: !Ref NodeAutoScalingGroupMinSize
+      Subnets: 
+          - !Ref Subnet01Id
+          - !Ref Subnet02Id
+      Version: 1.17
+
+Outputs:
+  SecurityGroups:
+    Description: Security group for the cluster control plane communication with worker nodes
+    Value: !Join [ ",", [ !Ref ControlPlaneSecurityGroup ] ]
+
+  EKSCluster:
+    Description: The created EKS Cluster Name
+    Value: !Ref EKSCluster
+
+  EKSServiceRole:
+    Description: The name of the EKS Service Role Created
+    Value: !Ref EKSServiceRole
+
+  NodegroupName:
+    Description: The Node Group Name
+    Value: !Ref EKSNodeGroup
+
+  NodeInstanceRole:
+    Description: The Node Instance Role Arn
+    Value: !Ref NodeInstanceRole
