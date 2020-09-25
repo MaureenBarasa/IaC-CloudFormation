@@ -40,5 +40,5 @@ Resources:
 
 Outputs:
   ESCluster:
-    Description: Public Subnet 01 ID in the VPC
+    Description: The ES domain created
     Value: !Ref ElasticSearchCluster
