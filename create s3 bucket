@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create s3 bucket"
+
+Parameters:
+    BucketName:
+        Type: String
+        Description: The s3 bucket name
+        Default: maureenbarasatests3 
+        
+Resources:
+    S3Bucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          AccessControl: Private 
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                   SSEAlgorithm: AES256 
+          BucketName: !Ref BucketName
+          PublicAccessBlockConfiguration: 
+              BlockPublicAcls: TRUE
+              BlockPublicPolicy: TRUE
+              IgnorePublicAcls: TRUE
+              RestrictPublicBuckets: TRUE
+          VersioningConfiguration:
+              Status: Enabled
+          Tags: 
+              - Key: Name
+                Value: !Ref BucketName
+              - Key: Owner
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test 
+
+Outputs:
+  BcktName:
+    Value: !Ref BucketName
+    Description: Name of the Amazon S3 bucket
