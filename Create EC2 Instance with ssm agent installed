@@ -4,34 +4,19 @@ Parameters:
     VPC:
         Type: String
         Description: The vpc to launch the service
-        Default: vpc-01f2b397214f4b723
+        Default: vpc-ID
 
     PrivateSubnet1:
         Type: String
         Description: The subnet where to launch the ec2
-        Default: subnet-0759e8592205d4146
-
-    PrivateSubnet2:
-        Type: String
-        Description: The subnet where to launch the ec2
-        Default: subnet-0c0e2f18b2d73c57b
-
-    PublicSubnet1:
-        Type: String
-        Description: The subnet where to launch the ec2
-        Default: subnet-088647969c935e0b0
-
-    PublicSubnet2:
-        Type: String
-        Description: The subnet where to launch the ec2
-        Default: subnet-09f9bf2665afa7093
+        Default: subnet-ID
 
 Resources:
     StudioServer:
         Type: "AWS::EC2::Instance"
         Properties:
             ImageId: "ami-0c2b1c303a2e4cb49"
-            InstanceType: "t2.medium"
+            InstanceType: "t2.micro"
             KeyName: !Sub "${AWS::Region}-Averycore-test-Environment"
             AvailabilityZone: !Sub "${AWS::Region}a"
             Tenancy: "default"
@@ -39,7 +24,7 @@ Resources:
             SubnetId: !Ref PrivateSubnet1
             EbsOptimized: false
             SecurityGroupIds: 
-              - !Ref StudioSecurityGroup
+              - !Ref CentosSecurityGroup
             SourceDestCheck: true
             BlockDeviceMappings: 
               - 
@@ -54,42 +39,41 @@ Resources:
                     !Sub |
                        #!/bin/bash -xe
                        # Get the latest CloudFormation package
-                       apt-get update -y
-                       apt-get install -y python-pip
-                       apt-get install -y python-setuptools
+                       yum update -y
+                       yum install -y python-pip
+                       yum install -y python-setuptools
                        mkdir -p /opt/aws/bin
                        python /usr/lib/python2.7/dist-packages/easy_install.py --script-dir /opt/aws/bin https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
                        # Start cfn-init
                        /opt/aws/bin/cfn-init -s ${AWS::StackId} -r WebServerHost --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
-                        sudo apt-get update -y
-                        sudo apt-get -y install snapd
-                        sudo snap install amazon-ssm-agent –classic
-                        sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
-                        sudo systemctl stop snap.amazon-ssm-agent.amazon-ssm-agent.service
-                        sudo systemctl status snap.amazon-ssm-agent.amazon-ssm-agent.service
+                        cd /tmp
+                        sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+                        sudo systemctl enable amazon-ssm-agent
+                        sudo systemctl start amazon-ssm-agent
                        # Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata
                        /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
                        # All done so signal success
                        /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WebServerHost --region ${AWS::Region}
-            IamInstanceProfile: "AveryCore-AWS-EC2-SSM-Role"
+            IamInstanceProfile: "EC2-SSM-Role"
             Tags: 
               - 
                 Key: "Project"
-                Value: "ac_development"
+                Value: "test-blog"
               - 
                 Key: "Environment"
-                Value: "prod"
+                Value: "test"
               - 
                 Key: "createdBy"
                 Value: "Maureen Barasa"
               - 
                 Key: "Name"
-                Value: !Sub "${AWS::Region}-Averycore-prod-VPC-Studio-Server"
-    StudioSecurityGroup:
+                Value: "Test-Centos"
+                
+    CentosSecurityGroup:
         Type: "AWS::EC2::SecurityGroup"
         Properties:
-            GroupDescription: "Security Group to control access to the test env studio servers"
-            GroupName: "eu-central-1-Averycore-prod-VPC-Studio-Servers-SG"
+            GroupDescription: "Security Group to control access to the test Centos server"
+            GroupName: "Test-Centos-SG"
             VpcId: !Ref VPC
             SecurityGroupIngress: 
               - 
@@ -106,3 +90,7 @@ Resources:
   StdioServer1:
     Description: The created studio server
     Value: !Ref StudioServer
+    
+   SecurityGroup:
+    Description: The server sg
+    Value: !Ref CentosSecurityGroup   
