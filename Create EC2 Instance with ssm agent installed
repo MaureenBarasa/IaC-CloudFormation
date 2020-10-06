@@ -85,6 +85,23 @@ Resources:
               - 
                 Key: "Name"
                 Value: !Sub "${AWS::Region}-Averycore-prod-VPC-Studio-Server"
+    StudioSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Security Group to control access to the test env studio servers"
+            GroupName: "eu-central-1-Averycore-prod-VPC-Studio-Servers-SG"
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+              - 
+                CidrIp: 0.0.0.0/0
+                FromPort: 80
+                IpProtocol: "tcp"
+                ToPort: 80
+              - 
+                CidrIp: 0.0.0.0/0
+                FromPort: 443
+                IpProtocol: "tcp"
+                ToPort: 443    
  Outputs:
   StdioServer1:
     Description: The created studio server
