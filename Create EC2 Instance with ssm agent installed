@@ -85,3 +85,7 @@ Resources:
               - 
                 Key: "Name"
                 Value: !Sub "${AWS::Region}-Averycore-prod-VPC-Studio-Server"
+ Outputs:
+  StdioServer1:
+    Description: The created studio server
+    Value: !Ref StudioServer
