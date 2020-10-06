@@ -17,7 +17,7 @@ Resources:
         Properties:
             ImageId: "ami-id"
             InstanceType: "t2.micro"
-            KeyName: !Sub "${AWS::Region}-Averycore-test-Environment"
+            KeyName: "test-key"
             AvailabilityZone: !Sub "${AWS::Region}a"
             Tenancy: "default"
             DisableApiTermination: true
