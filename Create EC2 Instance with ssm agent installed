@@ -15,7 +15,7 @@ Resources:
     StudioServer:
         Type: "AWS::EC2::Instance"
         Properties:
-            ImageId: "ami-0c2b1c303a2e4cb49"
+            ImageId: "ami-id"
             InstanceType: "t2.micro"
             KeyName: !Sub "${AWS::Region}-Averycore-test-Environment"
             AvailabilityZone: !Sub "${AWS::Region}a"
