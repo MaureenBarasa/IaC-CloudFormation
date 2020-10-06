@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create Iam Instance Profile and Role"
+
+Resources:
+  IAMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: AWSEC2SSMtest
+      Roles: 
+        - !Ref IAMInstanceRole
+
+  IAMInstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: The SSM Instance Profile
+      RoleName: AWSEC2SSMtest
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "test-blog"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: "AWSEC2SSMtest"
+Outputs:
+  InstanceProfile:
+    Description: the role created
+    Value: !Ref IAMInstanceProfile:
+    Export: 
+      Name: !Sub "${AWS::StackName}-rolename"
