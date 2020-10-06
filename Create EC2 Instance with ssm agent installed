@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create prod ec2 instances"
+Parameters:
+    VPC:
+        Type: String
+        Description: The vpc to launch the service
+        Default: vpc-01f2b397214f4b723
+
+    PrivateSubnet1:
+        Type: String
+        Description: The subnet where to launch the ec2
+        Default: subnet-0759e8592205d4146
+
+    PrivateSubnet2:
+        Type: String
+        Description: The subnet where to launch the ec2
+        Default: subnet-0c0e2f18b2d73c57b
+
+    PublicSubnet1:
+        Type: String
+        Description: The subnet where to launch the ec2
+        Default: subnet-088647969c935e0b0
+
+    PublicSubnet2:
+        Type: String
+        Description: The subnet where to launch the ec2
+        Default: subnet-09f9bf2665afa7093
+
+Resources:
+    StudioServer:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0c2b1c303a2e4cb49"
+            InstanceType: "t2.medium"
+            KeyName: !Sub "${AWS::Region}-Averycore-test-Environment"
+            AvailabilityZone: !Sub "${AWS::Region}a"
+            Tenancy: "default"
+            DisableApiTermination: true
+            SubnetId: !Ref PrivateSubnet1
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref StudioSecurityGroup
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 20
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            UserData: 
+                "Fn::Base64":
+                    !Sub |
+                       #!/bin/bash -xe
+                       # Get the latest CloudFormation package
+                       apt-get update -y
+                       apt-get install -y python-pip
+                       apt-get install -y python-setuptools
+                       mkdir -p /opt/aws/bin
+                       python /usr/lib/python2.7/dist-packages/easy_install.py --script-dir /opt/aws/bin https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+                       # Start cfn-init
+                       /opt/aws/bin/cfn-init -s ${AWS::StackId} -r WebServerHost --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+                        sudo apt-get update -y
+                        sudo apt-get -y install snapd
+                        sudo snap install amazon-ssm-agent –classic
+                        sudo systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+                        sudo systemctl stop snap.amazon-ssm-agent.amazon-ssm-agent.service
+                        sudo systemctl status snap.amazon-ssm-agent.amazon-ssm-agent.service
+                       # Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata
+                       /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
+                       # All done so signal success
+                       /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WebServerHost --region ${AWS::Region}
+            IamInstanceProfile: "AveryCore-AWS-EC2-SSM-Role"
+            Tags: 
+              - 
+                Key: "Project"
+                Value: "ac_development"
+              - 
+                Key: "Environment"
+                Value: "prod"
+              - 
+                Key: "createdBy"
+                Value: "Maureen Barasa"
+              - 
+                Key: "Name"
+                Value: !Sub "${AWS::Region}-Averycore-prod-VPC-Studio-Server"
