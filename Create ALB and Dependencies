@@ -22,7 +22,7 @@ Resources:
         Type: "AWS::EC2::SecurityGroup"
         Properties:
             GroupDescription: "security group for ALB"
-            GroupName: !Sub "${AWS::Region}-Averycore-prod-ALB-SG"
+            GroupName: "test-ALB-SG"
             Tags: 
               - 
                 Key: "Project"
