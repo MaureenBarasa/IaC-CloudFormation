@@ -1,0 +1,141 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to Create a document DB parameter group, subnet group and cluster
+
+Parameters:
+  VPC:
+    Type: String
+    Description: The VPC to create the cluster
+    Default: vpc-ID
+
+  PrivateSubnet01:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+  PrivateSubnet02:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+  MasterUsername:
+    Type: String
+    Description: The username for our database.
+  
+  MasterUserPassword:
+    Type: String
+    Description: The password for the database.
+    "NoEcho": true
+
+Resources:
+   DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "DB instances security group"
+      GroupName: "test-db-instance-SG"
+      VpcId: !Ref VPC
+      SecurityGroupIngress: 
+        - 
+          CidrIp: "*.*.*.*/32"
+          FromPort: 22017
+          IpProtocol: "tcp"
+          ToPort: 22017
+      SecurityGroupEgress: 
+        - 
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "-1"
+      
+   DBSubnetGroup: 
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: "test document db subnet group"
+      SubnetIds: 
+        - !Ref PrivateSubnet01
+        - !Ref PrivateSubnet02
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-test-db-subnet-group
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Project
+          Value: test-blog
+        - Key: Environment
+          Value: test
+
+   DBParameterGroup:
+    Type: AWS::DocDB::DBClusterParameterGroup
+    Properties:
+      Description: "our test document db parameter group"
+      Family: docdb3.6
+      Name: test-db-parameter-group
+      Parameters: 
+        audit_logs: "disabled"
+        tls: "enabled"
+        ttl_monitor: "enabled"
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-test-db-cluster
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Project
+          Value: test-blog
+        - Key: Environment
+          Value: test
+
+   DBCluster:
+    Type: AWS::DocDB::DBCluster
+    Properties: 
+      BackupRetentionPeriod : 5
+      DBClusterIdentifier : eu-central-1-test-db-cluster
+      DBClusterParameterGroupName : !Ref DBParameterGroup
+      DBSubnetGroupName : !Ref DBSubnetGroup
+      MasterUsername : !Ref MasterUsername
+      MasterUserPassword : !Ref MasterUserPassword
+      Port : "27017"
+      PreferredBackupWindow : "23:00-23:59"
+      PreferredMaintenanceWindow : "sun:00:00-sun:05:00"
+      VpcSecurityGroupIds:
+        - !Ref DBSecurityGroup
+      StorageEncrypted : true
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-test-db-cluster
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Project
+          Value: test-blog
+        - Key: Environment
+          Value: test
+
+   DBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      AutoMinorVersionUpgrade: true
+      AvailabilityZone: "eu-west-1a"
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: "db.t3.medium"
+      DBInstanceIdentifier: "test-cluster-instance-1"
+      PreferredMaintenanceWindow: "sun:00:00-sun:05:00"
+      Tags: 
+        - Key: Name
+          Value: eu-central-1-test-db-instance
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Project
+          Value: test-blog
+        - Key: Environment
+          Value: test
+
+Outputs:
+   Cluster:
+    Description: The DB Cluster Name
+    Value: !Ref DBCluster
+    
+   SubnetGroup:
+    Description: The db subnet group name 
+    Value: !Ref DBSubnetGroup
+
+   ParameterGroup:
+    Description: The db subnet group name 
+    Value: !Ref DBParameterGroup
+
