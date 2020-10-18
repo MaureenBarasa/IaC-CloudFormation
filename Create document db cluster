@@ -49,6 +49,7 @@ Resources:
     Type: AWS::DocDB::DBSubnetGroup
     Properties: 
       DBSubnetGroupDescription: "test document db subnet group"
+      DBSubnetGroupName: "eu-central-1-test-db-subnet-group"
       SubnetIds: 
         - !Ref PrivateSubnet01
         - !Ref PrivateSubnet02
