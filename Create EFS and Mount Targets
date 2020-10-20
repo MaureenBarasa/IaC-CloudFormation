@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create EFS system and Mount Targets for prod VPC"
+
+Parameters:
+    VPC:
+        Type: String
+        Description: The VPC identity
+        Default: vpc-ID
+
+    SubnetID1:
+        Type: String
+        Description: The subnet where to launch the service
+        Default: subnet-ID
+
+    SubnetID2:
+        Type: String
+        Description: the subnet where to Launch the service
+        Default: subnet-ID
+
+    SubnetID3:
+        Type: String
+        Description: The subnet where to launch the service
+        Default: subnet-ID
+
+    SubnetID4:
+        Type: String
+        Description: the subnet where to Launch the service
+        Default: subnet-ID
+    
+Resources:
+    EFSSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "security group for the prod EFS"
+            GroupName: "eu-central-1-Averycore-prod-VPC-EFS-SG"
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+              - 
+                SourceSecurityGroupId: sg-ID
+                Description: "ec2 servers to connect to efs"
+                FromPort: 2049
+                IpProtocol: "tcp"
+                ToPort: 2049
+
+    EFSFileSystem:
+        Type: "AWS::EFS::FileSystem"
+        Properties:
+            BackupPolicy:
+              Status: ENABLED
+            Encrypted: true
+            LifecyclePolicies:
+              - TransitionToIA: AFTER_60_DAYS
+            PerformanceMode: "generalPurpose"
+            Encrypted: true
+            ThroughputMode: "bursting"
+            FileSystemTags: 
+              - 
+                Key: "Environment"
+                Value: "prod"
+              - 
+                Key: "Name"
+                Value: test-EFS"
+              - 
+                Key: "Project"
+                Value: "test-blog"
+              - 
+                Key: "createdBy"
+                Value: "Maureen Barasa"
+
+    MountTarget1:
+        Type: AWS::EFS::MountTarget
+        Properties: 
+            FileSystemId: !Ref EFSFileSystem
+            IpAddress: *.*.*.*
+            SecurityGroups: 
+              - !Ref EFSSecurityGroup
+            SubnetId: !Ref SubnetID1
+
+    MountTarget2:
+        Type: AWS::EFS::MountTarget
+        Properties: 
+            FileSystemId: !Ref EFSFileSystem
+            IpAddress: *.*.*.*
+            SecurityGroups: 
+              - !Ref EFSSecurityGroup
+            SubnetId: !Ref SubnetID2
+
+Outputs:
+  EFS:
+    Description: The created EFS 
+    Value: !Ref EFSFileSystem
+
+  EFSMountTarget1:
+    Description: The EFS MountTarget1
+    Value: !Ref MountTarget1
+
+  EFSMountTarget2:
+    Description: The EFS MountTarget2
+    Value: !Ref MountTarget2
