@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create ECS fargate cluster"
+Parameters:
+    Name:
+        Type: String
+        Description: The name of the ECS Cluster
+
+Resources:
+    ECSCluster:
+        Type: 'AWS::ECS::Cluster'
+        Properties:
+           ClusterName: !Ref Name
+           ClusterSettings:
+             - Name: containerInsights
+               Value: enabled
+           CapacityProviders:
+             - FARGATE
+
+Outputs:        
+    ECS:
+        Description: The created ECS Cluster
+        Value: !Ref ECSCluster
