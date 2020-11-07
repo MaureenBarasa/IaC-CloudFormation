@@ -15,6 +15,16 @@ Resources:
                Value: enabled
            CapacityProviders:
              - FARGATE
+           Tags: 
+              - 
+                Key: "Name"
+                Value: "test-ecs"
+              - 
+                Key: "CreatedBy"
+                Value: "Maureen Barasa"
+              - 
+                Key: "Environment"
+                Value: "test"
 
 Outputs:        
     ECS:
