@@ -20,3 +20,10 @@ Resources:
           Value: Maureen Barasa
         - Key: Project
           Value: test-ecs
+
+Outputs:
+  RegistryName:
+    Value: !Ref ECR
+    Description: Name of the ECR Registry
+          
+          
