@@ -1,8 +1,22 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: 'Template to create an ECR repository'
 
+Parameters:
+  ECR:
+    Type: String
+    Description: "The Name of your ECR registry"
+
 Resources:
   ECRRepository1:
     Type: "AWS::ECR::Repository"
     Properties:
       RepositoryName: test-ecr
+      ImageScanningConfiguration:
+        scanOnPush: "true"
+      Tags: 
+        - Key: Name
+          Value: !Ref ECR
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: Project
+          Value: test-ecs
