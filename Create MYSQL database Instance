@@ -42,6 +42,15 @@ Resources:
               - 
                 CidrIp: "0.0.0.0/0"
                 IpProtocol: "-1"
+            Tags: 
+              - Key: Name
+                Value: eu-central-1-test-RDS-SecurityGroup
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
 
     RDSDBSubnetGroup:
         Type: "AWS::RDS::DBSubnetGroup"
@@ -54,6 +63,21 @@ Resources:
             Tags: 
               - Key: Name
                 Value: eu-central-1-test-db-cluster
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+                
+    RDSParameterGroup:
+        Type: "AWS::RDS::DBParameterGroup"
+        Properties:
+            Description: the sql-db parameter group
+            Family: "mysql8.0"
+            Tags: 
+              - Key: Name
+                Value: eu-central-1-test-RDS-ParameterGroup
               - Key: createdBy
                 Value: Maureen Barasa
               - Key: Project
@@ -89,8 +113,17 @@ Resources:
             VPCSecurityGroups: 
               - !Ref EC2SecurityGroup
             MaxAllocatedStorage: 1000
-            DBParameterGroupName: test-db
+            DBParameterGroupName: !Ref RDSParameterGroup
             MonitoringRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/rds-monitoring-role"
+            Tags: 
+              - Key: Name
+                Value: eu-central-1-test-RDS-DBInstance
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
 
 Outputs:
    Instance:
