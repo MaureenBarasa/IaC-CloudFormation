@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create traceapp DB, parameter and subnet group"
+
+Parameters:
+  VPC:
+    Type: String
+    Description: The VPC to create the cluster
+    Default: vpc-ID
+
+  PrivateSubnet01:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+  PrivateSubnet02:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+  MasterUsername:
+    Type: String
+    Description: The username for our database
+  
+  MasterUserPassword:
+    Type: String
+    Description: The password for the database.
+    "NoEcho": true
+
+Resources:
+    EC2SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Database instances security group"
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 5470
+                IpProtocol: "tcp"
+                ToPort: 5470
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            Tags: 
+              - Key: Name
+                Value: eu-west-1-test-RDS-SG
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+
+    RDSDBSubnetGroup:
+        Type: "AWS::RDS::DBSubnetGroup"
+        Properties:
+            DBSubnetGroupDescription: "Subnet Group for traceapp RDS database"
+            DBSubnetGroupName: eu-west-1-AWS-MOH-RDS-SubnetGroup
+            SubnetIds: 
+              - !Ref PrivateSubnet01
+              - !Ref PrivateSubnet02
+            Tags: 
+              - Key: Name
+                Value: eu-west-1-test-RDS-SubnetGroup
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+
+    RDSParameterGroup:
+        Type: "AWS::RDS::DBParameterGroup"
+        Properties:
+            Description: the traceapp postgres-db parameter group
+            Family: "postgres12"
+            Tags: 
+              - Key: Name
+                Value: eu-west-1-test-RDS-ParameterGroup
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+
+
+    RDSDBInstance:
+        Type: AWS::RDS::DBInstance
+        Properties:
+            DBInstanceIdentifier: eu-west-1-test-RDS-DBInstance
+            AllocatedStorage: 100
+            DBInstanceClass: db.t3.medium
+            Engine: "postgres"
+            MasterUsername: !Ref MasterUsername
+            MasterUserPassword: !Ref MasterUserPassword
+            BackupRetentionPeriod: 7
+            MultiAZ: false
+            EngineVersion: 12.4
+            AutoMinorVersionUpgrade: true
+            Iops: 1000
+            PubliclyAccessible: false
+            StorageType: io1
+            Port: 5470
+            StorageEncrypted: true
+            CopyTagsToSnapshot: true
+            MonitoringInterval: 60
+            EnableIAMDatabaseAuthentication: false
+            EnablePerformanceInsights: true
+            PerformanceInsightsRetentionPeriod: 7
+            DeletionProtection: true
+            DBSubnetGroupName: !Ref RDSDBSubnetGroup
+            VPCSecurityGroups: 
+              - !Ref EC2SecurityGroup
+            MaxAllocatedStorage: 1000
+            DBParameterGroupName: !Ref RDSParameterGroup
+            MonitoringRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/rds-monitoring-role"
+            Tags: 
+              - Key: Name
+                Value: eu-west-1-test-RDS-DBInstance
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+ 
+Outputs:
+   Instance:
+    Description: The DB Cluster Name
+    Value: !Ref RDSDBInstance
+    
+   SubnetGroup:
+    Description: The db subnet group name 
+    Value: !Ref RDSDBSubnetGroup
