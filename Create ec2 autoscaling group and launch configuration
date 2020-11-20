@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "template to create the traceapp asg group"
+
+Parameters:
+  VPC:
+    Type: String
+    Description: The VPC to create the cluster
+    Default: vpc-ID
+
+  PrivateSubnet01:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+  PrivateSubnet02:
+    Type: String
+    Description: The subnet for the DB cluster
+    Default: subnet-ID
+
+Resources:
+    TestAppServerSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Security Group to control access to the traceapp servers"
+            GroupName: "eu-west-1-test-AppServer-SecurityGroup"
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+              - 
+                CidrIp: 0.0.0.0/0
+                FromPort: 80
+                IpProtocol: "tcp"
+                ToPort: 80
+              - 
+                CidrIp: 0.0.0.0/0
+                FromPort: 443
+                IpProtocol: "tcp"
+                ToPort: 443  
+            Tags: 
+              - Key: Name
+                Value: eu-west-1-test-AppServer-SecurityGroup
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+              - Key: Environment
+                Value: test
+ 
+    TestAppLaunchConfig:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties: 
+            ImageId: "ami-ID"
+            SecurityGroups:
+               - !Ref TraceAppServerSecurityGroup
+            InstanceType: t3.medium
+            LaunchConfigurationName: "eu-west-1-test-AppServer-LaunchConfig"
+            IamInstanceProfile: "AWSEC2SSM"
+            EbsOptimized: "true"
+            UserData: 
+               "Fn::Base64":
+                  !Sub |
+                    #!/bin/bash
+                    cd /tmp
+                    sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+                    sudo systemctl enable amazon-ssm-agent
+                    sudo systemctl start amazon-ssm-agent
+            KeyName: Infra-Admin
+            InstanceMonitoring: false
+
+    TestAppASG:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+           AutoScalingGroupName: "eu-west-1-test-AppServer-ASG"
+           MinSize: "1"
+           MaxSize: "3"
+           DesiredCapacity: "2"
+           LaunchConfigurationName: !Ref TraceAppLaunchConfig
+           VPCZoneIdentifier:
+              - !Ref PrivateSubnet01
+              - !Ref PrivateSubnet02
+           Tags:
+              - Key: Name
+                Value: "eu-west-1-test-AppServer-ASG"
+                PropagateAtLaunch: "true"
+              - Key: createdBy
+                Value: Maureen Barasa
+                PropagateAtLaunch: "true"
+              - Key: Project
+                Value: test-blog
+                PropagateAtLaunch: "true"
+              - Key: Environment
+                Value: test
+                PropagateAtLaunch: "true"
+
+Outputs:
+  LConfig:
+    Description: traceapp servers launch config
+    Value: !Ref TestAppLaunchConfig
+    
+  ASG:
+    Description: The traceapp servers asg
+    Value: !Ref TestAppASG   
