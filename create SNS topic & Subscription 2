@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create SNS Topic and Subscriptions"
+
+Parameters:
+    Name:
+        Type: String
+        Description: The Topic Name
+        Default: EKS_CLUSTER_MEMORY_LESS_THAN_50
+
+Resources:
+    Email1Notification:
+        Type: AWS::SNS::Subscription
+        Properties:
+           Endpoint: maureen.barasa.mb@gmail.com
+           Protocol: email
+           TopicArn: !Ref ScaleDownTopic
+
+    Email2Notification:
+        Type: AWS::SNS::Subscription
+        Properties:
+           Endpoint: test-blog@gmail.com
+           Protocol: email
+           TopicArn: !Ref ScaleDownTopic
+
+    ScaleDownTopic:   
+        Type: AWS::SNS::Topic
+        Properties: 
+           Tags: 
+              - Key: Name
+                Value: EKS_CLUSTER_MEMORY_LESS_THAN_50
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Project
+                Value: test-blog
+           TopicName: EKS_CLUSTER_MEMORY_LESS_THAN_50
+Outputs:    
+    ScaleDown:
+        Description: The scale down topic
+        Value: !Ref ScaleDownTopic
