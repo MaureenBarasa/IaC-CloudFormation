@@ -31,7 +31,7 @@ Resources:
                 Value: Maureen Barasa
               - Key: Project
                 Value: test-blog
-           TopicName: EKS_CLUSTER_MEMORY_MORE_THAN_70
+           TopicName: !Ref Name
 
 Outputs:
     ScaleUp:
