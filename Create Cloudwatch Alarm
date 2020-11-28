@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create Cloudwatch Alarm"
+
+Parameters:
+    AlarmName1:
+        Type: String
+        Description: The Alarm Name
+        Default: EKS-memory-utilization-too-high
+
+    AlarmName2:
+        Type: String
+        Description: The Alarm Name
+        Default: EKS-memory-utilization-too-low
+
+Resources:
+  EKSMemoryUtilisationTooHighAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: "EKS-memory-utilization-too-high"
+      AlarmActions:
+      - !ImportValue EKSScaleUp
+      AlarmDescription: "EKS cluster Memory Utilisation above 70%"
+      ComparisonOperator: "GreaterThanThreshold"
+      TreatMissingData: "missing"
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref "AWS::AccountId"
+      - Name: ClusterName
+        Value: eu-west-1-AWS-DXL-Web-EKS-Cluster
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      MetricName: "node_memory_utilization"
+      Namespace: "ContainerInsights"
+      Period: "300"
+      ExtendedStatistic: p100
+      Threshold: "70"
+
+  EKSMemoryUtilisationTooLowAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: "EKS-memory-utilization-too-low"
+      AlarmActions:
+      - !ImportValue EKSScaleDown
+      AlarmDescription: "EKS cluster Memory Utilisation Below 50%"
+      ComparisonOperator: "LessThanThreshold"
+      TreatMissingData: "missing"
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref "AWS::AccountId"
+      - Name: ClusterName
+        Value: eu-west-1-AWS-DXL-Web-EKS-Cluster
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      MetricName: "node_memory_utilization"
+      Namespace: "ContainerInsights"
+      Period: "300"
+      ExtendedStatistic: p100
+      Threshold: "50"
+
+Outputs:
+    Alarm1:
+        Description: The high utilisation alarm name
+        Value: !Ref EKSMemoryUtilisationTooHighAlarm
+        Export:
+          Name: "MemTooHighAlarm"
+          Value: !Ref EKSMemoryUtilisationTooHighAlarm
+
+    Alarm2:
+        Description: The low utilisation alarm name
+        Value: !Ref EKSMemoryUtilisationTooLowAlarm
+        Export:
+          Name: "MemTooLowAlarm"
+          Value: !Ref EKSMemoryUtilisationTooLowAlarm
