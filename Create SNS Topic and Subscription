@@ -37,5 +37,7 @@ Outputs:
     ScaleUp:
         Description: The scale up topic
         Value: !Ref ScaleUpTopic
-    
+        Export:
+          Name: "EKSScaleUp"
+          Value: !Ref ScaleUpTopic
 
