@@ -16,7 +16,7 @@ Resources:
   EKSMemoryUtilisationTooHighAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
-      AlarmName: "EKS-memory-utilization-too-high"
+      AlarmName: !Ref AlarmName1
       AlarmActions:
       - !ImportValue EKSScaleUp
       AlarmDescription: "EKS cluster Memory Utilisation above 70%"
@@ -26,7 +26,7 @@ Resources:
       - Name: ClientId
         Value: !Ref "AWS::AccountId"
       - Name: ClusterName
-        Value: eu-west-1-AWS-DXL-Web-EKS-Cluster
+        Value: eu-central-1-EKS-Cluster
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
       MetricName: "node_memory_utilization"
@@ -38,7 +38,7 @@ Resources:
   EKSMemoryUtilisationTooLowAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
-      AlarmName: "EKS-memory-utilization-too-low"
+      AlarmName: !Ref AlarmName2
       AlarmActions:
       - !ImportValue EKSScaleDown
       AlarmDescription: "EKS cluster Memory Utilisation Below 50%"
@@ -48,7 +48,7 @@ Resources:
       - Name: ClientId
         Value: !Ref "AWS::AccountId"
       - Name: ClusterName
-        Value: eu-west-1-AWS-DXL-Web-EKS-Cluster
+        Value: eu-central-1-EKS-Cluster
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
       MetricName: "node_memory_utilization"
