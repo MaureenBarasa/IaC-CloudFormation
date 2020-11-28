@@ -32,8 +32,11 @@ Resources:
                 Value: Maureen Barasa
               - Key: Project
                 Value: test-blog
-           TopicName: EKS_CLUSTER_MEMORY_LESS_THAN_50
+           TopicName: !Ref Name
 Outputs:    
     ScaleDown:
         Description: The scale down topic
         Value: !Ref ScaleDownTopic
+        Export:
+          Name: "EKSScaleDown"
+          Value: !Ref ScaleDownTopic
