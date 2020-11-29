@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "create a scaling policy and apply it to EKS ASG Group"
+
+Resources:
+  ScaleDownPolicy: 
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      AdjustmentType: "ChangeInCapacity"
+      PolicyType: "SimpleScaling"
+      Cooldown: "300"
+      AutoScalingGroupName: "eks-b0bb0868-2797-d046-4bac-677ed0d48b2c"
+      ScalingAdjustment: -2
+
+  ScaleUpPolicy: 
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      AdjustmentType: "ChangeInCapacity"
+      PolicyType: "SimpleScaling"
+      Cooldown: "300"
+      AutoScalingGroupName: "eks-b0bb0868-2797-d046-4bac-677ed0d48b2c"
+      ScalingAdjustment: 2
+
+Outputs:
+    ScaleUp:
+        Description: The scale up policy
+        Value: !Ref ScaleUpPolicy
+        Export:
+          Name: "EKSScaleUpPolicy"
+          Value: !Ref ScaleUpPolicy
+
+    ScaleDown:
+        Description: The scale down policy
+        Value: !Ref ScaleDownPolicy
+        Export:
+          Name: "EKSScaleDownPolicy"
+          Value: !Ref ScaleDownPolicy
