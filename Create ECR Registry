@@ -10,7 +10,7 @@ Resources:
   ECRRepository1:
     Type: "AWS::ECR::Repository"
     Properties:
-      RepositoryName: test-ecr
+      RepositoryName: !Ref ECR
       ImageScanningConfiguration:
         scanOnPush: "true"
       Tags: 
