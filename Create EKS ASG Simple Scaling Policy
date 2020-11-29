@@ -8,7 +8,7 @@ Resources:
       AdjustmentType: "ChangeInCapacity"
       PolicyType: "SimpleScaling"
       Cooldown: "300"
-      AutoScalingGroupName: "eks-b0bb0868-2797-d046-4bac-677ed0d48b2c"
+      AutoScalingGroupName: "eks-ASG-GroupName"
       ScalingAdjustment: -2
 
   ScaleUpPolicy: 
@@ -17,7 +17,7 @@ Resources:
       AdjustmentType: "ChangeInCapacity"
       PolicyType: "SimpleScaling"
       Cooldown: "300"
-      AutoScalingGroupName: "eks-b0bb0868-2797-d046-4bac-677ed0d48b2c"
+      AutoScalingGroupName: "eks-ASG-GroupName"
       ScalingAdjustment: 2
 
 Outputs:
