@@ -81,5 +81,8 @@ Outputs:
     Project:
         Description: The codebuild build project
         Value: !Ref ProjectName
+        Export:
+          Name: "BuildProject"
+          Value: !Ref ProjectName
 
 
