@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create codebuild Project"
+
+Parameters:
+    ProjectName:
+        Type: String
+        Description: The CodeBuild Project Name
+        Default: Validate-CF-Template
+
+    CodeBuildRole:
+        Type: String
+        Description: The name codebuild role
+        Default: CodeBuild-ValidateCF
+
+Resources:
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: The CodeBuild Validate CF Template Role
+      RoleName: !Ref CodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "test-blog"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref CodeBuildRole
+
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ProjectName
+      Description: build project to validate our CF Template
+      ServiceRole: !Ref IAMRole
+      Artifacts:
+          Type: NO_ARTIFACTS
+      Environment:
+          Type: LINUX_CONTAINER
+          ComputeType: BUILD_GENERAL1_SMALL
+          Image: aws/codebuild/standard:4.0
+          PrivilegedMode: true  
+      Source:
+          Location: https://git-codecommit.eu-central-1.amazonaws.com/v1/repos/test-lint
+          Type: CODECOMMIT
+          BuildSpec: buildspec.yml
+      TimeoutInMinutes: 15
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "test-blog"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref ProjectName
+
+Outputs:
+    Project:
+        Description: The codebuild build project
+        Value: !Ref ProjectName
+
+
