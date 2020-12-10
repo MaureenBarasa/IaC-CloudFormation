@@ -1,17 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Template to create ElasticSearch domain"
+Description: "Template to create the test ElasticSearch domain"
 
 Resources:
     ElasticSearchCluster:            
         Type: AWS::Elasticsearch::Domain
         Properties: 
-            DomainName: test-elasticsearch
+            DomainName: test-ElasticSearch-Cluster
             AdvancedSecurityOptions:
                 Enabled: true
                 InternalUserDatabaseEnabled: false
                 MasterUserOptions:
-                   MasterUserARN: arn:aws:iam::******************** 
-            ElasticsearchVersion: 7.7
+                   MasterUserARN: arn:aws:iam::***************:user/maureenbarasa 
+            ElasticsearchVersion: 7.9
             EncryptionAtRestOptions:
                 Enabled: true 
             DomainEndpointOptions:
@@ -22,6 +22,9 @@ Resources:
                 DedicatedMasterCount: "3"
                 InstanceCount: 2
                 InstanceType: "c4.large.elasticsearch"
+                WarmCount: 2
+                WarmEnabled: true
+                WarmType: ultrawarm1.medium.elastisearch
             NodeToNodeEncryptionOptions:
                 Enabled: true                
             EBSOptions:
@@ -36,7 +39,17 @@ Resources:
                     Principal:
                        AWS: "*"
                     Action: "es:*"
-                    Resource: "arn:aws:es:eu-west-1:***************:domain/test-elasticsearch/*"
+                    Resource: "arn:aws:es:eu-west-1:************:domain/eu-west-1-AWS-EDMS-ElasticSearch-Cluster/*"
+            Tags:
+              - Key: Name
+                Value: test-ElasticSearch-Cluster
+              - Key: Project
+                Value: test-blog
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: environment
+                Value: UAT
+
 
 Outputs:
   ESCluster:
