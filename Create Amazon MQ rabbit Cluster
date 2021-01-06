@@ -1,0 +1,100 @@
+--- 
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to Create Amazon MQ (Rabbit MQ Cluster)
+
+Parameters:
+  VPC:
+    Type: String
+    Description: The VPC to create the cluster
+    Default: vpc-ID
+
+  PrivateSubnet01:
+    Type: String
+    Description: The subnet for the MQ cluster
+    Default: subnet-ID
+
+  PrivateSubnet02:
+    Type: String
+    Description: The subnet for the MQ cluster
+    Default: subnet-ID
+
+  BrokerName:
+    Type: String
+    Description: The name of the Amazon MQ Broker Cluster
+    Default: eu-west-1-Mpesa-App-Amazon-MQ-Cluster
+
+  BrokerUsername:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: The username for our MQ cluster
+    Default: Amazon-MQ-username
+
+  BrokerPassword:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: The password for our MQ Cluster
+    Default: Amazon-MQ-Password
+
+Resources: 
+    MQSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Amazon MQ Cluster security group"
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 5671
+                IpProtocol: "tcp"
+                ToPort: 5671
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            Tags:
+              - Key: Name
+                Value: test-Amazon-MQ-Cluster-SecurityGroup
+              - Key: Project
+                Value: test-blog
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: environment
+                Value: UAT
+                
+    MQBroker:
+        Type: "AWS::AmazonMQ::Broker"
+        Properties: 
+            AutoMinorVersionUpgrade: "false"
+            BrokerName: !Ref BrokerName
+            DeploymentMode: CLUSTER_MULTI_AZ
+            EngineType: RabbitMQ
+            EngineVersion: "3.8.6"
+            HostInstanceType: mq.t3.micro
+            logs:
+              General: true
+            PubliclyAccessible: "false"
+            SubnetIds:
+              - !Ref PrivateSubnet01
+              - !Ref PrivateSubnet02
+            SecurityGroups:
+              - !Ref MQSecurityGroup
+            Users: 
+              - 
+                ConsoleAccess: "true"
+                Password: !Ref BrokerPassword           
+                Username: !Ref BrokerUsername
+            Tags:
+              - Key: Name
+                Value: !Ref BrokerName
+              - Key: Project
+                Value: test-blog
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: environment
+                Value: UAT
+Outputs:
+  MQCluster:
+    Description: The Amazon MQ Cluster Name
+    Value: !Ref MQBroker
+    
+  SecurityGroup:
+    Description: The db subnet group name 
+    Value: !Ref MQSecurityGroup
