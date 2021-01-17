@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Create XR3 S3 bucket and Cloudfront Distribution"
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: The s3 bucket name 
+
+  EnvironmentName:
+    Type: String
+    Description: The Environment you are launching services in (Prod/UAT)
+    
+  CreatedBy:
+    Type: String
+    Description: The Identity of the Person Creating the Environment
+
+  ProjectName:
+    Type: String
+    Description: The Company Project Name
+    Default: XR3
+
+  RegionName:
+    Type: String
+    Description: The region to launch your s3 bucket (e.g. us-west-1)
+
+Resources:
+  XR3S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private 
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256 
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration: 
+          BlockPublicAcls: TRUE
+          BlockPublicPolicy: TRUE
+          IgnorePublicAcls: TRUE
+          RestrictPublicBuckets: TRUE
+      VersioningConfiguration:
+          Status: Enabled
+      Tags: 
+        - Key: Name
+          Value: !Ref BucketName
+        - Key: createdBy
+          Value: !Ref CreatedBy
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName 
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: XR3CloudFrontOriginAccessIdentity
+    Properties:
+      Bucket: !Ref XR3S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${XR3CloudFrontOriginAccessIdentity}'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${XR3S3Bucket}/*'
+            
+  XR3CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+         Comment: The XR3 Engine Cloudfront Origin Access Identity
+
+  XR3CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: XR3CloudFrontOriginAccessIdentity
+    Properties:
+      DistributionConfig:
+        Origins:
+          - S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${XR3CloudFrontOriginAccessIdentity}'
+            DomainName: !GetAtt XR3S3Bucket.DomainName
+            Id: !Ref XR3S3Bucket
+        Enabled: 'true'
+        Comment: our XR3 Engine Cloudfront Distribution
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: !Ref XR3S3Bucket
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+      Tags:
+        - Key: Name
+          Value: !Ref BucketName
+        - Key: createdBy
+          Value: !Ref CreatedBy
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName 
+
+Outputs:
+  BcktName:
+    Value: !Ref XR3S3Bucket
+    Description: Name of the Amazon S3 bucket
+
+  CFDistribution:
+    Value: !Ref XR3CloudFrontDistribution
+    Description: Name of the CloudFront Distribution
