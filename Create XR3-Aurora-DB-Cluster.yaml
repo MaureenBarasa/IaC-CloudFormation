@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create XR3 Aurora MYSQL DB Instance, parameter and subnet group"
+
+Parameters:
+  DBMasterUsername:
+    Type: String
+    Description: The master username for our database
+    Default: EngineR3Admin
+
+  DBMasterPassword:
+    Type: String
+    Description: The master user password for our db instance (must be atleast 8 characters)
+    NoEcho: true
+
+  DBClusterName:
+    Type: String
+    Description: The DB Instance Name (e.g. us-west-1-XR3-Aurora-RDS-Instance)
+    Default: XR3-Aurora-RDS-Instance
+
+  DBInstanceSGName:
+    Type: String
+    Description: The DB Instance Security Group Name
+    Default: XR3-RDS-Aurora-SecurityGroup
+
+  DBInstanceSubnetGroupName:
+    Type: String
+    Description: The DB Instance Subnet Group Name (must be lower case letters not more than 255 characters)
+    Default: xr3-rds-aurora-subnetgroup
+
+  DBInstanceParameterGroupName:
+    Type: String
+    Description: The DB Instance Parameter Group Name
+    Default: XR3-RDS-Aurora-ParameterGroup
+    
+  DBClusterParameterGroupName:
+    Type: String
+    Description: The DB Cluster Parameter Group Name
+    Default: XR3-RDS-Aurora-Cluster-ParameterGroup
+
+  DBInstanceType:
+    Type: String
+    Description: The DB EC2 Instance Type (e.g. db.t3.medium, db.r5.large)
+    Default: db.t3.medium
+
+  DBTimeZone:
+    Type: String
+    Description: The DB TimeZone Parameter (e.g US/Eastern)
+    Default: US/Pacific
+
+  AZ1Name:
+    Type: String
+    Description: The name of Availability Zone 1 e.g (us-west-1a)
+
+  AZ2Name:
+    Type: String
+    Description: The name of Availability Zone 2 e.g (us-west-1b)
+
+  EnvironmentName:
+    Type: String
+    Description: The Environment you are launching services in (Prod/UAT)
+
+  CreatedBy:
+    Type: String
+    Description: The Identity of the Person Creating the Environment
+
+  ProjectName:
+    Type: String
+    Description: The Company Project Name
+
+Resources:
+    RDSSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "XR3 Aurora RDS Database instances security group"
+            VpcId: !ImportValue XR3-VPCID
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 3306
+                IpProtocol: "tcp"
+                ToPort: 3306
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            Tags:
+              - Key: Name
+                Value: !Ref DBInstanceSGName
+              - Key: Project
+                Value: !Ref ProjectName
+              - Key: createdBy
+                Value: !Ref CreatedBy
+              - Key: environment
+                Value: !Ref EnvironmentName
+
+    RDSDBSubnetGroup:
+        Type: "AWS::RDS::DBSubnetGroup"
+        Properties:
+            DBSubnetGroupDescription: "Subnet Group for XR3 Aurora RDS database Instance"
+            DBSubnetGroupName: !Ref DBInstanceSubnetGroupName
+            SubnetIds: 
+              - !ImportValue XR3-PrivateSubnet03Id
+              - !ImportValue XR3-PrivateSubnet04Id
+            Tags:
+              - Key: Name
+                Value: !Ref DBInstanceSubnetGroupName
+              - Key: Project
+                Value: !Ref ProjectName
+              - Key: createdBy
+                Value: !Ref CreatedBy
+              - Key: environment
+                Value: !Ref EnvironmentName
+
+    RDSDBClusterParameterGroup:
+        Type: "AWS::RDS::DBClusterParameterGroup"
+        Properties:
+            Description: the XR3 Aurora DB Instance Parameter group
+            Family: "aurora-mysql5.7"
+            Parameters:
+              time_zone: !Ref DBTimeZone
+            Tags:
+              - Key: Name
+                Value: !Ref DBClusterParameterGroupName
+              - Key: Project
+                Value: !Ref ProjectName
+              - Key: createdBy
+                Value: !Ref CreatedBy
+              - Key: environment
+                Value: !Ref EnvironmentName
+
+    RDSParameterGroup:
+        Type: "AWS::RDS::DBParameterGroup"
+        Properties:
+            Description: the XR3 Aurora DB Instance Parameter group
+            Family: "aurora-mysql5.7"
+            Tags:
+              - Key: Name
+                Value: !Ref DBInstanceParameterGroupName
+              - Key: Project
+                Value: !Ref ProjectName
+              - Key: createdBy
+                Value: !Ref CreatedBy
+              - Key: environment
+                Value: !Ref EnvironmentName
+                
+    RDSDBCluster:
+        Type:  AWS::RDS::DBCluster
+        DependsOn: RDSSecurityGroup
+        DependsOn: RDSDBSubnetGroup
+        DependsOn: RDSDBClusterParameterGroup
+        DependsOn: RDSParameterGroup
+        Properties:
+            DBClusterIdentifier: !Ref DBClusterName
+            AvailabilityZones:
+              - !Ref AZ1Name
+              - !Ref AZ2Name  
+            Engine: "aurora-mysql"
+            EngineMode: "provisioned"
+            EngineVersion: 5.7
+            StorageEncrypted: true
+            MasterUsername: !Ref DBMasterUsername
+            MasterUserPassword: !Ref DBMasterPassword
+            EnableCloudwatchLogsExports: 
+              - audit
+              - error
+            BackupRetentionPeriod: 7            
+            Port: 3306
+            EnableIAMDatabaseAuthentication: false
+            DeletionProtection: false
+            DBSubnetGroupName: !Ref RDSDBSubnetGroup
+            VpcSecurityGroupIds: 
+              - !Ref RDSSecurityGroup
+            DBClusterParameterGroupName: !Ref RDSDBClusterParameterGroup
+            Tags:
+              - Key: Name
+                Value: !Ref DBClusterName
+              - Key: Project
+                Value: !Ref ProjectName
+              - Key: createdBy
+                Value: !Ref CreatedBy
+              - Key: environment
+                Value: !Ref EnvironmentName
+
+    RDSDBInstance:
+        Type: AWS::RDS::DBInstance
+        DependsOn: RDSDBCluster
+        Properties:
+            DBClusterIdentifier: !Ref RDSDBCluster
+            DBInstanceClass: !Ref DBInstanceType
+            DBParameterGroupName: !Ref RDSParameterGroup
+            DBSubnetGroupName: !Ref RDSDBSubnetGroup
+            Engine: "aurora-mysql"
+            AvailabilityZone: !Ref AZ1Name
+
+Outputs:
+   Cluster:
+    Description: The DB Cluster Name
+    Value: !Ref RDSDBCluster
+    
+   ParameterGroup:
+    Description: The DB parameter Group
+    Value: !Ref RDSParameterGroup
+
+   ClusterParameterGroup:
+    Description: The DB Cluster parameter Group
+    Value: !Ref RDSDBClusterParameterGroup                 
