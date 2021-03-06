@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create Code Build Project"
+
+Parameters:
+  PolicyName:
+    Type: String
+    Description: The CodeBuild Policy Name
+    Default: CodeBuildServiceRolePolicy2
+
+  RoleName:
+    Type: String
+    Description: The CodeBuild Role Name
+    Default: CodeBuildServiceRole2
+
+  BuildProject:
+    Type: String
+    Description: The CodeBuild Project Name
+    Default: CodeBuildVLSDemo2
+
+Resources:
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: The codebuild service role
+      RoleName: !Ref RoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "lab-02"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref RoleName
+
+  IAMPolicy:
+    Type: "AWS::IAM::Policy"
+    DependsOn: IAMRole
+    Properties:
+      PolicyName: !Ref PolicyName
+      Roles: 
+         - !Ref IAMRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: CloudWatchLogsPolicy
+          Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Effect: Allow
+          Resource: 
+          - '*'
+        - Sid: CodeBuildReportGroup
+          Effect: Allow
+          Action:
+          - codebuild:*
+          Resource: "*"
+        - Sid: CodeCommitPolicy
+          Effect: Allow
+          Action:
+          - codecommit:GitPull
+          Resource:
+          - "*"
+        - Sid: S3GetObjectPolicy
+          Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          Resource:
+          - "*"
+        - Sid: S3PutObjectPolicy
+          Effect: Allow
+          Action:
+          - s3:PutObject
+          Resource:
+          - "*"
+        - Sid: S3BucketIdentity
+          Effect: Allow
+          Action:
+          - s3:GetBucketAcl
+          - s3:GetBucketLocation
+          Resource:
+          - "*"
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts: 
+          Type: NO_ARTIFACTS
+      BadgeEnabled: false
+      Name: !Ref BuildProject
+      Source:
+          Type: CODECOMMIT
+          Location: https://git-codecommit.eu-west-1.amazonaws.com/v1/repos/TestCICD
+      SourceVersion: main
+      Description: build project for VLS Demo
+      LogsConfig:
+          CloudWatchLogs:
+            Status: ENABLED
+      Environment:
+          ComputeType: BUILD_GENERAL1_MEDIUM
+          Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+          Type: LINUX_CONTAINER
+          PrivilegedMode: true
+      ServiceRole: !GetAtt IAMRole.Arn
+      TimeoutInMinutes: 15
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "lab-02"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref BuildProject
+ 
+Outputs:
+  Project:
+    Description: The code build project
+    Value: !Ref CodeBuildProject
+    Export: 
+      Name: !Sub "${AWS::StackName}-CodeBuildProject"
+
+  ServiceRole:
+    Description: The code build project
+    Value: !Ref IAMRole
+    Export: 
+      Name: !Sub "${AWS::StackName}-CodeBuildServiceRole"
+
+
+
+
+
