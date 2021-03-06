@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create ElasticBeanstalk Application and Environment"
+
+Parameters:
+  InstanceProfile:
+    Type: String
+    Description: The elasticbeanstalk Instance Profile Name
+    Default: aws-elasticbeanstalk-ec2-role2
+
+  AppName:
+    Type: String
+    Description: The elasticbeanstalk Application Name
+    Default: VLS2
+
+  Env1Name:
+    Type: String
+    Description: The elasticbeanstalk Environment Name
+    Default: vls-prod-env1
+
+  Env2Name:
+    Type: String
+    Description: The elasticbeanstalk Environment Name
+    Default: vls-qa-env1
+
+Resources:
+  IAMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    DependsOn: IAMInstanceRole
+    Properties: 
+      InstanceProfileName: !Ref InstanceProfile
+      Roles: 
+        - !Ref IAMInstanceRole
+
+  IAMInstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: The SSM Instance Profile
+      RoleName: !Ref InstanceProfile
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - "ec2.amazonaws.com"
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkFullAccess
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "lab-03"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref InstanceProfile
+
+  ElasticBeanstalkApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    DependsOn: IAMInstanceProfile
+    Properties:
+      ApplicationName: !Ref AppName
+      Description: "vls application2"
+
+  ElasticBeanstalkEnvironment1:
+    Type: AWS::ElasticBeanstalk::Environment
+    DependsOn: IAMInstanceProfile
+    Properties:
+      ApplicationName: !Ref ElasticBeanstalkApplication
+      CNAMEPrefix: mbarasaawslabprod1
+      Description: VLS app prod environment
+      EnvironmentName: !Ref Env1Name
+      SolutionStackName: 64bit Amazon Linux 2 v5.3.0 running Node.js 12
+      OptionSettings:
+        -
+          Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref IAMInstanceProfile
+      Tier:
+        Name: WebServer
+        Type: Standard
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "lab-03"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref Env1Name
+
+  ElasticBeanstalkEnvironment2:
+    Type: AWS::ElasticBeanstalk::Environment
+    DependsOn: IAMInstanceProfile
+    Properties:
+      ApplicationName: !Ref ElasticBeanstalkApplication
+      CNAMEPrefix: mbarasaawslabqa1
+      Description: VLS app qa environment
+      EnvironmentName: !Ref Env2Name
+      SolutionStackName: 64bit Amazon Linux 2 v5.3.0 running Node.js 12
+      OptionSettings:
+        -
+          Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref IAMInstanceProfile
+      Tier:
+        Name: WebServer
+        Type: Standard
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "lab-03"
+        - 
+          Key: "Environment"
+          Value: "test"
+        - 
+          Key: "createdBy"
+          Value: "Maureen Barasa"
+        - 
+          Key: "Name"
+          Value: !Ref Env2Name
+
+Outputs:
+  InstanceProfile:
+    Description: the role created
+    Value: !Ref IAMInstanceRole
+
+  Application:
+    Description: the application created
+    Value: !Ref ElasticBeanstalkApplication
+
+  Environment1Name:
+    Description: the beanstalk prod env created
+    Value: !Ref ElasticBeanstalkEnvironment
+
+
+ 
